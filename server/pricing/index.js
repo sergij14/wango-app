@@ -12,7 +12,7 @@ const strategies = {
     return total;
   },
 
-  newyork: function (start, end) {
+  "new york": function (start, end) {
     const duration = (end - start) / 1000 / 60 / 60;
     return 5 * Math.ceil(duration);
   },
