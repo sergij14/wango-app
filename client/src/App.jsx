@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-
-const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+import parkingApi from "./api";
 
 export default function App() {
   // User states
@@ -25,20 +23,9 @@ export default function App() {
 
   const [message, setMessage] = useState("");
 
-  // Load cities on user login
-  useEffect(() => {
-    if (user) {
-      fetchCities();
-      fetchSessions();
-    }
-  }, [user]);
-
-  console.log(message);
-
-  // Fetch cities + parking areas
   const fetchCities = async () => {
     try {
-      const res = await axios.get(`${backendURL}/cities`);
+      const res = await parkingApi.getCities();
       setCities(res.data);
       setSelectedCityId("");
       setParkingAreas([]);
@@ -47,6 +34,92 @@ export default function App() {
       console.error(err);
     }
   };
+
+  const fetchSessions = async () => {
+    try {
+      const res = await parkingApi.getUserSessions(user._id);
+      setSessions(res.data);
+      const active = res.data.find((s) => !s.endTime);
+      setActiveSession(active || null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!email || !address || !carPlate) {
+      setMessage("Please fill all register fields");
+      return;
+    }
+    try {
+      await parkingApi.register({ email, address, carPlate });
+      setMessage("Registered successfully. Please login.");
+      setEmail("");
+      setAddress("");
+      setCarPlate("");
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Registration failed");
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!loginEmail || !loginCarPlate) {
+      setMessage("Please fill all login fields");
+      return;
+    }
+    try {
+      const res = await parkingApi.login({
+        email: loginEmail,
+        carPlate: loginCarPlate,
+      });
+      setUser(res.data);
+      setLoginEmail("");
+      setLoginCarPlate("");
+      setMessage("Logged in successfully");
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Login failed");
+    }
+  };
+
+  const handleStart = async () => {
+    if (!selectedParkingAreaId) {
+      setMessage("Select a parking area");
+      return;
+    }
+    try {
+      const res = await parkingApi.startParking({
+        userId: user._id,
+        parkingAreaId: selectedParkingAreaId,
+      });
+      setActiveSession(res.data);
+      setMessage("Parking started");
+      fetchSessions();
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Failed to start parking");
+    }
+  };
+
+  const handleStop = async () => {
+    if (!activeSession) return;
+    try {
+      const res = await parkingApi.stopParking({
+        sessionId: activeSession._id,
+      });
+      setMessage(`Parking stopped. Price: $${res.data.price.toFixed(2)}`);
+      setActiveSession(null);
+      fetchSessions();
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Failed to stop parking");
+    }
+  };
+
+  // Load cities on user login
+  useEffect(() => {
+    if (user) {
+      fetchCities();
+      fetchSessions();
+    }
+  }, [user]);
 
   // When city changes, update parking areas dropdown
   useEffect(() => {
@@ -62,56 +135,6 @@ export default function App() {
     }
   }, [selectedCityId]);
 
-  // Fetch user parking sessions
-  const fetchSessions = async () => {
-    try {
-      const res = await axios.get(`${backendURL}/sessions/${user._id}`);
-      setSessions(res.data);
-      // Check if any active session (no endTime)
-      const active = res.data.find((s) => !s.endTime);
-      setActiveSession(active || null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Register
-  const handleRegister = async () => {
-    if (!email || !address || !carPlate) {
-      setMessage("Please fill all register fields");
-      return;
-    }
-    try {
-      await axios.post(`${backendURL}/register`, { email, address, carPlate });
-      setMessage("Registered successfully. Please login.");
-      setEmail("");
-      setAddress("");
-      setCarPlate("");
-    } catch (err) {
-      setMessage(err.response?.data?.error || "Registration failed");
-    }
-  };
-
-  // Login
-  const handleLogin = async () => {
-    if (!loginEmail || !loginCarPlate) {
-      setMessage("Please fill all login fields");
-      return;
-    }
-    try {
-      const res = await axios.post(`${backendURL}/login`, {
-        email: loginEmail,
-        carPlate: loginCarPlate,
-      });
-      setUser(res.data);
-      setLoginEmail("");
-      setLoginCarPlate("");
-      setMessage("Logged in successfully");
-    } catch (err) {
-      setMessage(err.response?.data?.error || "Login failed");
-    }
-  };
-
   // Logout
   const handleLogout = () => {
     setUser(null);
@@ -121,40 +144,6 @@ export default function App() {
     setParkingAreas([]);
     setSelectedParkingAreaId("");
     setMessage("");
-  };
-
-  // Start parking
-  const handleStart = async () => {
-    if (!selectedParkingAreaId) {
-      setMessage("Select a parking area");
-      return;
-    }
-    try {
-      const res = await axios.post(`${backendURL}/start`, {
-        userId: user._id,
-        parkingAreaId: selectedParkingAreaId,
-      });
-      setActiveSession(res.data);
-      setMessage("Parking started");
-      fetchSessions();
-    } catch (err) {
-      setMessage(err.response?.data?.error || "Failed to start parking");
-    }
-  };
-
-  // Stop parking
-  const handleStop = async () => {
-    if (!activeSession) return;
-    try {
-      const res = await axios.post(`${backendURL}/stop`, {
-        sessionId: activeSession._id,
-      });
-      setMessage(`Parking stopped. Price: $${res.data.price.toFixed(2)}`);
-      setActiveSession(null);
-      fetchSessions();
-    } catch (err) {
-      setMessage(err.response?.data?.error || "Failed to stop parking");
-    }
   };
 
   return (
