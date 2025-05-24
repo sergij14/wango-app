@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/appDB
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: parking-server
+    depends_on:
+      - mongo
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/appDB
+    volumes:
+      - ./server:/app
+      - /app/node_modules    
+    command: npm run start
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: parking-client
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    stdin_open: true
+    command: npm run dev -- --host
+
+volumes:
+  mongo_data:
