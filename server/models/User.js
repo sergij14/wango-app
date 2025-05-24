@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  email: { type: String, unique: true },
+  email: String,
   carPlate: String,
   address: String,
 });
 
-module.exports = mongoose.model("City", UserSchema);
+module.exports = mongoose.model("User", UserSchema);

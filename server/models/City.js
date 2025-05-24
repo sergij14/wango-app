@@ -4,4 +4,4 @@ const CitySchema = new mongoose.Schema({
   name: String,
 });
 
-module.exports = mongoose.model("City", CitySchema);
+module.exports = mongoose.model('City', CitySchema);

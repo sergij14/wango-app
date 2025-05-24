@@ -9,6 +9,7 @@ const ParkingSessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "ParkingArea",
   },
+  parkingArea: { type: mongoose.Schema.Types.ObjectId, ref: "ParkingArea" },
   startTime: Date,
   endTime: Date,
   price: Number,
