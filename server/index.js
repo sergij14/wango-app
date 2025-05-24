@@ -6,19 +6,16 @@ const User = require("./models/User");
 const City = require("./models/City");
 const ParkingArea = require("./models/ParkingArea");
 const ParkingSession = require("./models/ParkingSession");
-const { calculatePrice } = require("./helpers");
+const { calculatePrice } = require("./pricing");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-mongoose.connect(
-  process.env.MONGO_URI || "mongodb://localhost:27017/appDB",
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-);
+mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/appDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 app.post("/register", async (req, res) => {
   const { email, address, carPlate } = req.body;
@@ -73,10 +70,10 @@ app.get("/sessions/:userId", async (req, res) => {
   res.json(sessions);
 });
 
-app.get('/cities', async (req, res) => {
+app.get("/cities", async (req, res) => {
   const cities = await City.find().lean();
   console.log(cities);
-  
+
   for (let city of cities) {
     const parkingAreas = await ParkingArea.find({ city: city._id });
     city.parkingAreas = parkingAreas;
