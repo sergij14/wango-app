@@ -1,5 +1,10 @@
 const request = require("supertest");
 const app = require("../index");
+const mongoose = require("mongoose");
+
+afterAll(async () => {
+  await mongoose.connection.close();
+});
 
 test("Register and login", async () => {
   const user = await request(app).post("/register").send({ email: "test@test.com", address: "123", carPlate: "ABC123" });
